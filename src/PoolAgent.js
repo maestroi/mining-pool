@@ -181,7 +181,6 @@ class PoolAgent extends Nimiq.Observable {
         //set deviceName 
         if (msg.deviceName !== undefined) {
             this._deviceName = msg.deviceName;
-            return
         } else {
             this._deviceName = "not defined!"
         }
@@ -197,8 +196,7 @@ class PoolAgent extends Nimiq.Observable {
         // DUMBMODE Extra
         if (this.mode === PoolAgent.Mode.DUMB) {
             if (msg.hasOwnProperty(fixedDifficulty)) {
-                this._difficulty = msg.fixedDifficulty
-                return
+                this._difficulty = new Nimiq.BigNumber(msg.fixedDifficulty);
             }
             this._difficulty = new Nimiq.BigNumber(32);
         }

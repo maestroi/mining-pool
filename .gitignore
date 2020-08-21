@@ -10,3 +10,4 @@ mypool.cer
 mypool.key
 wallet/data.mdb
 wallet/lock.mdb
+package-lock.json
