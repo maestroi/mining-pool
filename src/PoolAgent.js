@@ -42,6 +42,9 @@ class PoolAgent extends Nimiq.Observable {
         /** @type {boolean} */
         this._registered = false;
 
+        /** @type {boolean} */
+        this._superminer = false;
+
         /** @type {Address} */
         this._address = null;
 
@@ -199,6 +202,7 @@ class PoolAgent extends Nimiq.Observable {
                 this._difficulty = new Nimiq.BigNumber(msg.fixedDifficulty);
             } else if (msg.startDifficulty !== undefined) {
                 this._difficulty = new Nimiq.BigNumber(msg.startDifficulty);
+                this._superminer = true
             } else {
                 this._difficulty = new Nimiq.BigNumber(32);
             }
@@ -410,6 +414,7 @@ class PoolAgent extends Nimiq.Observable {
      * @private
      */
     async _onDumbShareMessage(msg) {
+
         //Nimiq.Log.i(PoolAgent, `${msg}`);
         const nonce = msg.nonce;
         const header = new Nimiq.BlockHeader(this._currentHeader.prevHash, this._currentHeader.interlinkHash, this._currentHeader.bodyHash, this._currentHeader.accountsHash, this._currentHeader.nBits, this._currentHeader.height, this._currentHeader.timestamp, nonce, this._currentHeader.version);
@@ -489,21 +494,23 @@ class PoolAgent extends Nimiq.Observable {
      * To reduce network traffic, we set the minimum share difficulty for a user according to their number of shares in the last SPS_TIME_UNIT
      */
     _recalcDifficulty() {
-        this._timers.clearTimeout('recalc-difficulty');
-        const sharesPerSecond = 1000 * this._sharesSinceReset / Math.abs(Date.now() - this._lastSpsReset);
-        Nimiq.Log.v(PoolAgent, `SPS for ${this._address.toUserFriendlyAddress()}: ${sharesPerSecond.toFixed(2)} at difficulty ${this._difficulty}`);
-        if (sharesPerSecond / this._pool.config.desiredSps > 2) {
-            const newDifficulty = this._difficulty.times(1.2);
-            this._regenerateSettings(newDifficulty);
-            this._sendSettings();
-        } else if (sharesPerSecond === 0 || this._pool.config.desiredSps / sharesPerSecond > 2) {
-            const newDifficulty = Nimiq.BigNumber.max(this._pool.config.minDifficulty, this._difficulty.div(1.2));
-            this._regenerateSettings(newDifficulty);
-            this._sendSettings();
+        if (this._superminer == false) {
+            this._timers.clearTimeout('recalc-difficulty');
+            const sharesPerSecond = 1000 * this._sharesSinceReset / Math.abs(Date.now() - this._lastSpsReset);
+            Nimiq.Log.v(PoolAgent, `SPS for ${this._address.toUserFriendlyAddress()}: ${sharesPerSecond.toFixed(2)} at difficulty ${this._difficulty}`);
+            if (sharesPerSecond / this._pool.config.desiredSps > 2) {
+                const newDifficulty = this._difficulty.times(1.2);
+                this._regenerateSettings(newDifficulty);
+                this._sendSettings();
+            } else if (sharesPerSecond === 0 || this._pool.config.desiredSps / sharesPerSecond > 2) {
+                const newDifficulty = Nimiq.BigNumber.max(this._pool.config.minDifficulty, this._difficulty.div(1.2));
+                this._regenerateSettings(newDifficulty);
+                this._sendSettings();
+            }
+            this._sharesSinceReset = 0;
+            this._lastSpsReset = Date.now();
+            this._timers.resetTimeout('recalc-difficulty', () => this._recalcDifficulty(), this._pool.config.spsTimeUnit);
         }
-        this._sharesSinceReset = 0;
-        this._lastSpsReset = Date.now();
-        this._timers.resetTimeout('recalc-difficulty', () => this._recalcDifficulty(), this._pool.config.spsTimeUnit);
     }
 
     _countNewError() {
