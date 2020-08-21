@@ -181,6 +181,7 @@ class PoolAgent extends Nimiq.Observable {
         //set deviceName 
         if (msg.deviceName !== undefined) {
             this._deviceName = msg.deviceName;
+            return
         } else {
             this._deviceName = "not defined!"
         }
@@ -197,6 +198,11 @@ class PoolAgent extends Nimiq.Observable {
         if (this.mode === PoolAgent.Mode.DUMB) {
             this._difficulty = new Nimiq.BigNumber(32);
         }
+        // DUMBMODE Extra
+        if (msg.hasOwnProperty(fixedDifficulty)) {
+            this._difficulty = msg.fixedDifficulty
+        }
+
 
         const genesisHash = Nimiq.Hash.unserialize(Nimiq.BufferUtils.fromBase64(msg.genesisHash));
         if (!genesisHash.equals(Nimiq.GenesisConfig.GENESIS_HASH)) {
@@ -404,6 +410,7 @@ class PoolAgent extends Nimiq.Observable {
      * @private
      */
     async _onDumbShareMessage(msg) {
+        //Nimiq.Log.i(PoolAgent, `${msg}`);
         const nonce = msg.nonce;
         const header = new Nimiq.BlockHeader(this._currentHeader.prevHash, this._currentHeader.interlinkHash, this._currentHeader.bodyHash, this._currentHeader.accountsHash, this._currentHeader.nBits, this._currentHeader.height, this._currentHeader.timestamp, nonce, this._currentHeader.version);
 

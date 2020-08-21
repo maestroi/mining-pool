@@ -3,3 +3,10 @@ node_modules
 .idea
 .DS_Store
 main-full-consensus
+peer-key/lock.mdb
+peer-key/data.mdb
+server.conf
+mypool.cer
+mypool.key
+wallet/data.mdb
+wallet/lock.mdb
