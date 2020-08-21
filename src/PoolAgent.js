@@ -196,13 +196,11 @@ class PoolAgent extends Nimiq.Observable {
         }
         // DUMBMODE Extra
         if (this.mode === PoolAgent.Mode.DUMB) {
+            if (msg.hasOwnProperty(fixedDifficulty)) {
+                this._difficulty = msg.fixedDifficulty
+            }
             this._difficulty = new Nimiq.BigNumber(32);
         }
-        // DUMBMODE Extra
-        if (msg.hasOwnProperty(fixedDifficulty)) {
-            this._difficulty = msg.fixedDifficulty
-        }
-
 
         const genesisHash = Nimiq.Hash.unserialize(Nimiq.BufferUtils.fromBase64(msg.genesisHash));
         if (!genesisHash.equals(Nimiq.GenesisConfig.GENESIS_HASH)) {
