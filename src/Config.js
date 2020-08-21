@@ -18,6 +18,7 @@ const TAG = 'Config';
  * @property {{enabled: boolean, port: number, sslCertPath: string, sslKeyPath: string, mySqlPsw: string, mySqlHost: string}} poolServer
  * @property {{enabled: boolean, mySqlPsw: string, mySqlHost: string}} poolService
  * @property {{enabled: boolean, mySqlPsw: string, mySqlHost: string}} poolPayout
+ * @property {{enabled: boolean, mySqlPsw: string, mySqlHost: string}} poolValidate
  * @property {{enabled: boolean, port: number, password: string}} poolMetricsServer
  * @property {{seed: string, address: string}} wallet
  * @property {{enabled: boolean, port: number, address: string, addresses: Array.<string>, header: string, checkSource: boolean, acceptHeader: boolean}} reverseProxy
@@ -75,8 +76,13 @@ const DEFAULT_CONFIG = /** @type {Config} */ {
         mySqlPsw: null,
         mySqlHost: null
     },
-    poolMetricsServer: {
+    poolValidate: {
         enabled: false,
+        mySqlPsw: null,
+        mySqlHost: null
+    },
+    poolMetricsServer: {
+        enabled: true,
         port: 8650,
         password: null
     },
@@ -111,7 +117,7 @@ const CONFIG_TYPES = {
     },
     port: 'number',
     dumb: 'boolean',
-    type: {type: 'string', values: ['full', 'light', 'nano']},
+    type: { type: 'string', values: ['full', 'light', 'nano'] },
     network: 'string',
     statistics: 'number',
     pool: {
@@ -130,7 +136,7 @@ const CONFIG_TYPES = {
             pplnsBlocks: 'number',
             flushSharesInterval: 'number',
             allowedErrors: 'number',
-            banned: {type: 'array', inner: 'string'}
+            banned: { type: 'array', inner: 'string' }
         }
     },
     poolServer: {
@@ -157,6 +163,13 @@ const CONFIG_TYPES = {
             mySqlHost: 'string'
         }
     },
+    poolValidate: {
+        type: 'object', sub: {
+            enabled: 'boolean',
+            mySqlPsw: 'string',
+            mySqlHost: 'string'
+        }
+    },
     poolMetricsServer: {
         type: 'object', sub: {
             enabled: 'boolean',
@@ -171,7 +184,7 @@ const CONFIG_TYPES = {
     },
     log: {
         type: 'object', sub: {
-            level: {type: 'string', values: ['trace', 'verbose', 'debug', 'info', 'warning', 'error', 'assert']},
+            level: { type: 'string', values: ['trace', 'verbose', 'debug', 'info', 'warning', 'error', 'assert'] },
             tags: 'object'
         }
     },

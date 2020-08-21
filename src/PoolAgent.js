@@ -178,6 +178,12 @@ class PoolAgent extends Nimiq.Observable {
         }
 
         this._deviceId = msg.deviceId;
+        //set deviceName 
+        if (msg.deviceName !== undefined) {
+            this._deviceName = msg.deviceName;
+        } else {
+            this._deviceName = "not defined!"
+        }
         switch (msg.mode) {
             case PoolAgent.Mode.SMART:
             case PoolAgent.Mode.NANO:
@@ -186,6 +192,10 @@ class PoolAgent extends Nimiq.Observable {
                 break;
             default:
                 throw new Error('Client did not specify mode');
+        }
+        // DUMBMODE Extra
+        if (this.mode === PoolAgent.Mode.DUMB) {
+            this._difficulty = new Nimiq.BigNumber(32);
         }
 
         const genesisHash = Nimiq.Hash.unserialize(Nimiq.BufferUtils.fromBase64(msg.genesisHash));
@@ -242,7 +252,7 @@ class PoolAgent extends Nimiq.Observable {
         }
 
         try {
-            await this._pool.storeShare(this._userId, this._deviceId, block.header, this._difficulty);
+            await this._pool.storeShare(this._userId, this._deviceId, block.header, this._difficulty, this._deviceName);
         } catch (e) {
             this._sendError('submitted share twice');
             throw new Error('Client submitted share twice ' + e.message || e);
@@ -304,7 +314,7 @@ class PoolAgent extends Nimiq.Observable {
         const extraDataProof = Nimiq.MerklePath.unserialize(Nimiq.BufferUtils.fromBase64(msg.extraDataProof));
         const fullBlock = msg.block ? Nimiq.Block.unserialize(Nimiq.BufferUtils.fromBase64(msg.block)) : null;
 
-        const {invalidReason, difficulty} = await this._isSmartShareValid(header, hash, minerAddrProof, extraDataProof, fullBlock);
+        const { invalidReason, difficulty } = await this._isSmartShareValid(header, hash, minerAddrProof, extraDataProof, fullBlock);
         if (invalidReason) {
             Nimiq.Log.d(PoolAgent, `INVALID share from ${this._address.toUserFriendlyAddress()} / ${this._deviceId} (smart): ${invalidReason}`);
             this._sendError('invalid share: ' + invalidReason);
@@ -334,7 +344,7 @@ class PoolAgent extends Nimiq.Observable {
         }
 
         try {
-            await this._pool.storeShare(this._userId, this._deviceId, header, difficulty);
+            await this._pool.storeShare(this._userId, this._deviceId, header, difficulty, this._deviceName);
         } catch (e) {
             this._sendError('submitted share twice');
             throw new Error('Client submitted share twice ' + e.message || e);
@@ -357,7 +367,7 @@ class PoolAgent extends Nimiq.Observable {
     async _isSmartShareValid(header, hash, minerAddrProof, extraDataProof, fullBlock) {
         // Check if we are the _miner or the share
         if (!(await minerAddrProof.computeRoot(this._pool.poolAddress)).equals(header.bodyHash)) {
-            return {invalidReason: 'miner address mismatch'};
+            return { invalidReason: 'miner address mismatch' };
         }
 
         // Check if the extra data is in the share
@@ -367,18 +377,18 @@ class PoolAgent extends Nimiq.Observable {
         } else if (this._extraDataOld && (await extraDataProof.computeRoot(this._extraDataOld)).equals(header.bodyHash)) {
             expectedDifficulty = this._difficultyOld;
         } else {
-            return {invalidReason: 'extra data mismatch'};
+            return { invalidReason: 'extra data mismatch' };
         }
 
         // Check that the timestamp is not too far into the future.
         if (header.timestamp * 1000 > this._pool.consensus.network.time + Nimiq.Block.TIMESTAMP_DRIFT_MAX * 1000) {
-            return {invalidReason: 'bad timestamp'};
+            return { invalidReason: 'bad timestamp' };
         }
 
         // Check if the share fulfills the difficulty set for this client
         const pow = await header.pow();
         if (!Nimiq.BlockUtils.isProofOfWork(pow, Nimiq.BlockUtils.difficultyToTarget(expectedDifficulty))) {
-            return {invalidReason: 'invalid pow'};
+            return { invalidReason: 'invalid pow' };
         }
 
         // Check if the full block matches the header.
@@ -386,7 +396,7 @@ class PoolAgent extends Nimiq.Observable {
             throw new Error('full block announced but mismatches');
         }
 
-        return {difficulty: expectedDifficulty};
+        return { difficulty: expectedDifficulty };
     }
 
     /**
@@ -406,7 +416,7 @@ class PoolAgent extends Nimiq.Observable {
         }
 
         try {
-            await this._pool.storeShare(this._userId, this._deviceId, header, this._difficulty);
+            await this._pool.storeShare(this._userId, this._deviceId, header, this._difficulty, this._deviceName);
         } catch (e) {
             this._sendError('submitted share twice');
             throw new Error('Client submitted share twice ' + e.message || e);

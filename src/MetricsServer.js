@@ -13,10 +13,10 @@ class MetricsServer {
 
         https.createServer(options, (req, res) => {
             if (req.url !== '/metrics') {
-                res.writeHead(301, {'Location': '/metrics'});
+                res.writeHead(301, { 'Location': '/metrics' });
                 res.end();
             } else if (password && req.headers.authorization !== `Basic ${btoa(`metrics:${password}`)}`) {
-                res.writeHead(401, {'WWW-Authenticate': 'Basic realm="Use username metrics and user-defined password to access metrics." charset="UTF-8"'});
+                res.writeHead(401, { 'WWW-Authenticate': 'Basic realm="Use username metrics and user-defined password to access metrics." charset="UTF-8"' });
                 res.end();
             } else {
                 this._metrics(res);
@@ -55,24 +55,23 @@ class MetricsServer {
 
     _metrics(res) {
         const clientCounts = this._poolServer.getClientModeCounts();
-        MetricsServer._metric(res, 'pool_clients', this._with({client: 'unregistered'}), clientCounts.unregistered);
-        MetricsServer._metric(res, 'pool_clients', this._with({client: 'smart'}), clientCounts.smart);
-        MetricsServer._metric(res, 'pool_clients', this._with({client: 'nano'}), clientCounts.nano);
-        MetricsServer._metric(res, 'pool_clients', this._with({client: 'dumb'}), clientCounts.dumb);
-
+        MetricsServer._metric(res, 'pool_clients', this._with({ client: 'unregistered' }), clientCounts.unregistered);
+        MetricsServer._metric(res, 'pool_clients', this._with({ client: 'smart' }), clientCounts.smart);
+        MetricsServer._metric(res, 'pool_clients', this._with({ client: 'nano' }), clientCounts.nano);
+        MetricsServer._metric(res, 'pool_clients', this._with({ client: 'dumb' }), clientCounts.dumb);
+        MetricsServer._metric(res, 'pool_hashrate', this._desc, this._poolServer.averageHashrate);
         MetricsServer._metric(res, 'pool_ips_banned', this._desc, this._poolServer.numIpsBanned);
         MetricsServer._metric(res, 'pool_blocks_mined', this._desc, this._poolServer.numBlocksMined);
         MetricsServer._metric(res, 'pool_total_share_difficulty', this._desc, this._poolServer.totalShareDifficulty);
-
         MetricsServer._metric(res, 'chain_head_height', this._desc, this._poolServer.consensus.blockchain.head.height);
         MetricsServer._metric(res, 'consensus_min_fee', this._desc, this._poolServer.consensus.minFeePerByte);
 
         const txs = this._poolServer.consensus.mempool.getTransactions();
         const group = [0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000];
         for (let i = 1; i < group.length; ++i) {
-            MetricsServer._metric(res, 'mempool_transactions', this._with({'fee_per_byte': `<${group[i]}`}), txs.filter((tx) => tx.feePerByte >= group[i - 1] && tx.feePerByte < group[i]).length);
+            MetricsServer._metric(res, 'mempool_transactions', this._with({ 'fee_per_byte': `<${group[i]}` }), txs.filter((tx) => tx.feePerByte >= group[i - 1] && tx.feePerByte < group[i]).length);
         }
-        MetricsServer._metric(res, 'mempool_transactions', this._with({'fee_per_byte': `>=${group[group.length - 1]}`}), txs.filter((tx) => tx.feePerByte >= group[group.length - 1]).length);
+        MetricsServer._metric(res, 'mempool_transactions', this._with({ 'fee_per_byte': `>=${group[group.length - 1]}` }), txs.filter((tx) => tx.feePerByte >= group[group.length - 1]).length);
         MetricsServer._metric(res, 'mempool_size', this._desc, txs.reduce((a, b) => a + b.serializedSize, 0));
 
         /** @type {Map.<string, number>} */
@@ -153,11 +152,11 @@ class MetricsServer {
             MetricsServer._metric(res, 'network_peers', this._with(JSON.parse(os)), peers.get(os));
         }
         for (let type of addresses.keys()) {
-            MetricsServer._metric(res, 'network_known_addresses', this._with({type: type}), addresses.get(type));
+            MetricsServer._metric(res, 'network_known_addresses', this._with({ type: type }), addresses.get(type));
         }
 
-        MetricsServer._metric(res, 'network_bytes', this._with({'direction': 'sent'}), this._poolServer.consensus.network.bytesSent);
-        MetricsServer._metric(res, 'network_bytes', this._with({'direction': 'received'}), this._poolServer.consensus.network.bytesReceived);
+        MetricsServer._metric(res, 'network_bytes', this._with({ 'direction': 'sent' }), this._poolServer.consensus.network.bytesSent);
+        MetricsServer._metric(res, 'network_bytes', this._with({ 'direction': 'received' }), this._poolServer.consensus.network.bytesReceived);
     }
 
     /**
