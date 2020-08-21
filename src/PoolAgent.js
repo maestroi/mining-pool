@@ -200,9 +200,9 @@ class PoolAgent extends Nimiq.Observable {
         if (this.mode === PoolAgent.Mode.DUMB) {
             if (msg.fixedDifficulty !== undefined) {
                 this._difficulty = new Nimiq.BigNumber(msg.fixedDifficulty);
+                this._superminer = true
             } else if (msg.startDifficulty !== undefined) {
                 this._difficulty = new Nimiq.BigNumber(msg.startDifficulty);
-                this._superminer = true
             } else {
                 this._difficulty = new Nimiq.BigNumber(32);
             }
